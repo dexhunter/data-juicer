@@ -70,11 +70,15 @@ def split_on_whitespace(document, new_line=False, tab=False):
     :param tag: whether to split document with '\\\\t'
     :return: word list obtained after splitting document
     """
-    sep = [" "] + new_line * ["\n"] + tab * ["\t"]
-    sep = "|".join(sep)
-    split_document = re.split(sep, document)
-    split_document = [word for word in split_document if word]
-    return split_document
+    extra_seps = new_line * ["\n"] + tab * ["\t"]
+    if not isinstance(document, str):
+        # the regex raises the usual error for input that is not a str
+        return re.split("|".join([" "] + extra_seps), document)
+    # the unbound str methods ignore overrides in str subclasses
+    for sep in extra_seps:
+        document = str.replace(document, sep, " ")
+    # filter drops the empty pieces in C, without a bytecode loop
+    return list(filter(None, str.split(document, " ")))
 
 
 def split_on_newline_tab_whitespace(document):
