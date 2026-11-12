@@ -1,0 +1,62 @@
+[
+  {
+    "upstream_repo": "datajuicer/data-juicer",
+    "head_sha": "5f8df3e0ea46c03fbbcd388a937dc1026f8dbd4d",
+    "file": "data_juicer/ops/mapper/whitespace_normalization_mapper.py",
+    "function": "WhitespaceNormalizationMapper.process_batched",
+    "native_test_cmd": "python -m pytest tests/ops/mapper/test_whitespace_normalization_mapper.py -q",
+    "bench_cmd": "python osspr-intake/harness/bench_whitespace_normalization.py",
+    "baseline_median_ms": 53.02,
+    "baseline_noise_pct": 9.41,
+    "tests_pass_on_baseline": true,
+    "note": "Walks every character in Python against VARIOUS_WHITESPACES. On 2.87MB of prose (spaces, newlines, occasional NBSP) the median is 53.02ms over 7 runs; noise_pct is (max-min)/median. A stdlib re class of the non-space whitespace characters matched the output at about 8ms, so about 45ms is left on the table. Space itself is already a space and does not need to be rewritten."
+  },
+  {
+    "upstream_repo": "datajuicer/data-juicer",
+    "head_sha": "5f8df3e0ea46c03fbbcd388a937dc1026f8dbd4d",
+    "file": "data_juicer/ops/mapper/punctuation_normalization_mapper.py",
+    "function": "PunctuationNormalizationMapper.process_batched",
+    "native_test_cmd": "python -m pytest tests/ops/mapper/test_punctuation_normalization_mapper.py -q",
+    "bench_cmd": "python osspr-intake/harness/bench_punctuation_normalization.py",
+    "baseline_median_ms": 59.63,
+    "baseline_noise_pct": 7.98,
+    "tests_pass_on_baseline": true,
+    "note": "Builds a new string with a Python per-character dict lookup, including the three multi-character replacements (em dash, ellipsis, fullwidth period). On 2.47MB of prose with Unicode punctuation about every 40 words the median is 59.63ms; noise_pct is (max-min)/median over 7 runs. A compiled alternation of the same map matched the output at about 35ms."
+  },
+  {
+    "upstream_repo": "datajuicer/data-juicer",
+    "head_sha": "5f8df3e0ea46c03fbbcd388a937dc1026f8dbd4d",
+    "file": "data_juicer/ops/mapper/text_chunk_mapper.py",
+    "function": "TextChunkMapper.recursively_chunk",
+    "native_test_cmd": "python -m pytest tests/ops/mapper/test_text_chunk_mapper.py -q -k \"not tokenizer and not tiktoken and not dashscope and not all_text\"",
+    "bench_cmd": "python osspr-intake/harness/bench_text_chunk.py",
+    "baseline_median_ms": 64.42,
+    "baseline_noise_pct": 0.76,
+    "tests_pass_on_baseline": true,
+    "note": "When a window has no split match, each recursive step slices off the entire remaining tail (and the call stack grows with the document). A 2.2MB block with no blank lines, max_len=4096 and overlap_len=256, takes 64.42ms; noise_pct is (max-min)/median over 7 runs. An index walk that slices only the emitted chunk matched the output at about 1ms. Tokenizer tests in the same file download models and are deselected; the 8 character-length tests passed."
+  },
+  {
+    "upstream_repo": "datajuicer/data-juicer",
+    "head_sha": "5f8df3e0ea46c03fbbcd388a937dc1026f8dbd4d",
+    "file": "data_juicer/ops/mapper/clean_ip_mapper.py",
+    "function": "CleanIpMapper.process_batched",
+    "native_test_cmd": "python -m pytest tests/ops/mapper/test_clean_ip_mapper.py -q",
+    "bench_cmd": "python osspr-intake/harness/bench_clean_ip.py",
+    "baseline_median_ms": 217.05,
+    "baseline_noise_pct": 1.72,
+    "tests_pass_on_baseline": true,
+    "note": "Every sample runs an uncompiled search and, on a hit, a second sub of one pattern that unions a simple IPv4 expression with a large compressed-IPv6 alternation. On 624KB of ordinary prose that contains colons plus two IPv4 literals this is 217.05ms; noise_pct is (max-min)/median over 7 runs. The same call with only the IPv4 alternative was about 20ms, and the two addresses were the only characters removed, so the IPv6 branch is most of the time."
+  },
+  {
+    "upstream_repo": "datajuicer/data-juicer",
+    "head_sha": "5f8df3e0ea46c03fbbcd388a937dc1026f8dbd4d",
+    "file": "data_juicer/ops/mapper/pii_redaction_mapper.py",
+    "function": "PiiRedactionMapper._redact_text",
+    "native_test_cmd": "python -m pytest tests/ops/mapper/test_pii_redaction_mapper.py -q",
+    "bench_cmd": "python osspr-intake/harness/bench_pii_redaction.py",
+    "baseline_median_ms": 187.45,
+    "baseline_noise_pct": 12.24,
+    "tests_pass_on_baseline": true,
+    "note": "Applies about 17 regular expressions to every string. On 624KB of prose with one email, one URL, and one IPv4 the median is 187.45ms; noise_pct is (max-min)/median over 7 runs. On that same input secret_kv was about 32ms, id_kv about 27ms, email about 20ms, and the unix path pattern about 11ms, none of which matched a secret, id, or path. Marker checks before those scans are the headroom."
+  }
+]
